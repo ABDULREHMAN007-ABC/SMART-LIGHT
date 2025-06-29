@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Light Controller</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+    .led {
+      width: 110px;
+      height: 110px;
+      margin: 20px auto 30px;
+      border-radius: 50%;
+      background-color: #555;
+      box-shadow: 0 0 20px #000;
+      transition: all 0.4s ease;
+    }
+    .led.on {
+      background-color: #ffee58;
+      box-shadow: 0 0 35px 10px #ffee58;
+    }
+    .button-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      padding: 12px 28px;
+      font-size: 16px;
+      background: linear-gradient(145deg, #00c6ff, #0072ff);
+      border: none;
+      border-radius: 30px;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    button:hover {
+      transform: scale(1.08);
+      background: linear-gradient(145deg, #0072ff, #00c6ff);
+    }
+    #micBtn {
+      background: linear-gradient(145deg, #e91e63, #9c27b0);
+      box-shadow: 0 0 15px #e91e63, 0 0 30px #9c27b0;
+      animation: pulse 2s infinite;
+      margin-top: 30px;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 15px #e91e63; }
+      50% { box-shadow: 0 0 35px #9c27b0; }
+      100% { box-shadow: 0 0 15px #e91e63; }
+    }
+    footer {
+      margin-top: 50px;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>💡 Smart Light Controller</h1>
+  <div class="led" id="led"></div>
+  <div class="button-group">
+    <button onclick="turnOn()">Turn ON</button>
+    <button onclick="turnOff()">Turn OFF</button>
+  </div>
+  <button id="micBtn" onclick="startListening()">🎤 Voice Control</button>
+  <footer>
+    Powered by Blynk + HTML5 • Designed by You
+  </footer>
+  <script>
+    const TOKEN = "tG15i3uGGzx0xZ2bQsLkDsKFdIUeBliK";
+    const ON_URL = `https://blynk.cloud/external/api/update?token=${TOKEN}&V1=0`;
+    const OFF_URL = `https://blynk.cloud/external/api/update?token=${TOKEN}&V1=1`;
+    const GET_URL = `https://blynk.cloud/external/api/get?token=${TOKEN}&V1`;
+    const led = document.getElementById('led');
+    function turnOn() {
+      fetch(ON_URL);
+      led.classList.add('on');
+    }
+    function turnOff() {
+      fetch(OFF_URL);
+      led.classList.remove('on');
+    }
+    function startListening() {
+      if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.start();
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript.trim().toLowerCase();
+          if (transcript.includes("light on") || transcript.includes("turn on")) {
+            turnOn();
+          } else if (transcript.includes("light off") || transcript.includes("turn off")) {
+            turnOff();
+          } else {
+            alert("Command not recognized: " + transcript);
+          }
+        };
+        recognition.onerror = (err) => {
+          alert("Voice error: " + err.error);
+        };
+      } else {
+        alert("Speech Recognition not supported in this browser.");
+      }
+    }
+    setInterval(() => {
+      fetch(GET_URL)
+        .then(response => response.text())
+        .then(value => {
+          if (value === "0") {
+            led.classList.add('on');
+          } else {
+            led.classList.remove('on');
+          }
+        })
+        .catch(err => console.error("Status fetch error:", err));
+    }, 2000);
+  </script>
+</body>
+</html>
